@@ -1,7 +1,12 @@
 from flask import Flask, render_template, request
 import math
+
+from werkzeug.utils import redirect
+
 import dao
-from saleapp import app
+from saleapp import app, login, admin
+
+from flask_login import login_user, current_user, logout_user
 
 @app.route("/")
 def index():
@@ -12,10 +17,35 @@ def index():
     pages = math.ceil(dao.count_product()/app.config["PAGE_SIZE"])
     return render_template("index.html", prods=prods, pages=pages)
 
-@app.route("/signIn")
-def signIn():
+@app.route("/logIn", methods=['get', 'post'])
+def logIn():
+    if current_user.is_authenticated:
+        return redirect('/')
 
-    return render_template("signIn.html")
+    error_msg = None
+
+    if request.method.__eq__('POST'):
+        username = request.form.get("username")
+        password = request.form.get("pswd")
+
+        user = dao.auth_user(username, password)
+
+        if user:
+            login_user(user)
+            return redirect("/")
+        else:
+            error_msg = "Tài khoản hoặc mật khẩu không hợp lệ!"
+
+    return render_template("logIn.html", error_msg=error_msg)
+
+@login.user_loader
+def get_user(id):
+    return dao.get_user_by_id(id)
+
+@app.route("/logOut")
+def logOut():
+    logout_user()
+    return redirect("/logIn")
 
 @app.route("/products/<int:id>")
 def details(id):
