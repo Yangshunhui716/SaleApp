@@ -17,8 +17,8 @@ def index():
     pages = math.ceil(dao.count_product()/app.config["PAGE_SIZE"])
     return render_template("index.html", prods=prods, pages=pages)
 
-@app.route("/logIn", methods=['get', 'post'])
-def logIn():
+@app.route("/log_in", methods=['get', 'post'])
+def log_in():
     if current_user.is_authenticated:
         return redirect('/')
 
@@ -42,10 +42,31 @@ def logIn():
 def get_user(id):
     return dao.get_user_by_id(id)
 
-@app.route("/logOut")
-def logOut():
+@app.route("/log_out")
+def log_out():
     logout_user()
-    return redirect("/logIn")
+    return redirect("/log_in")
+
+@app.route("/admin_login", methods=['post'])
+def admin_login_process():
+    if current_user.is_authenticated:
+        return redirect('/admin')
+
+    error_msg = None
+
+    if request.method.__eq__('POST'):
+        username = request.form.get("username")
+        password = request.form.get("pswd")
+
+        user = dao.auth_user(username, password)
+
+        if user:
+            login_user(user)
+            return redirect("/admin")
+        else:
+            error_msg = "Tài khoản hoặc mật khẩu không hợp lệ!"
+
+    return render_template("logIn.html", error_msg=error_msg)
 
 @app.route("/products/<int:id>")
 def details(id):
