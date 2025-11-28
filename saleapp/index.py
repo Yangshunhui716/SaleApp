@@ -1,12 +1,10 @@
-from flask import Flask, render_template, request
+import cloudinary.uploader
+from flask import Flask, render_template, request, redirect, session
 import math
-
-from werkzeug.utils import redirect
-
 import dao
-from saleapp import app, login, admin
-
+from saleapp import app, login, admin, db
 from flask_login import login_user, current_user, logout_user
+from decorators import anonymous_required
 
 @app.route("/")
 def index():
@@ -17,11 +15,38 @@ def index():
     pages = math.ceil(dao.count_product()/app.config["PAGE_SIZE"])
     return render_template("index.html", prods=prods, pages=pages)
 
-@app.route("/log_in", methods=['get', 'post'])
-def log_in():
-    if current_user.is_authenticated:
-        return redirect('/')
+@app.route("/sign_up", methods=['get', 'post'])
+def sign_up():
+    error_msg = None
 
+    if request.method.__eq__('POST'):
+        password = request.form.get("pswd")
+        confirmpswd = request.form.get("confirmpswd")
+
+        if password.__eq__(confirmpswd):
+            username = request.form.get("username")
+            name = request.form.get("name")
+            avatar = request.files.get("avatar")
+            avatar_path = None
+
+            if avatar:
+                res = cloudinary.uploader.upload(avatar)
+                avatar_path = res['secure_url']
+            try:
+                dao.add_user(name=name, username=username, password=password, avatar=avatar_path)
+                return redirect("/log_in")
+            except:
+                db.session.rollback()
+                error_msg = "Hệ thông đang lỗi. Vui lòng truy cập lại sau!"
+
+        else:
+            error_msg = "Mật khẩu không khớp!"
+
+    return render_template("signUp.html", error_msg=error_msg)
+
+@app.route("/log_in", methods=['get', 'post'])
+@anonymous_required
+def log_in():
     error_msg = None
 
     if request.method.__eq__('POST'):
@@ -78,6 +103,24 @@ def common_attribute():
     return {
         "cates": dao.load_categories()
     }
+
+@app.route("/cart")
+def cart():
+    session['cart'] = {
+        "1": {
+            "id": "1",
+            "name": "Iphone 15",
+            "price": 15000,
+            "quantity": 1
+        },
+        "2": {
+            "id": "2",
+            "name": "Samsung Galaxy",
+            "price": 10000,
+            "quantity": 3
+        }
+    }
+    return render_template("cart.html")
 
 if __name__== "__main__":
     with app.app_context():

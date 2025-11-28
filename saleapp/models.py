@@ -1,6 +1,6 @@
 from flask import json
 from saleapp import db, app
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from enum import Enum as RoleEnum
@@ -33,6 +33,7 @@ class Product(Base):
     price = Column(Float, default=0.0)
     image = Column(String(300), default="https://res.cloudinary.com/dy1unykph/image/upload/v1740037805/apple-iphone-16-pro-natural-titanium_lcnlu2.webp")
     cate_id = Column(Integer, ForeignKey(Category.id), nullable=False)
+    description = Column(Text)
 
 if __name__ == "__main__":
     with app.app_context():

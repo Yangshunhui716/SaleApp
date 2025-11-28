@@ -1,11 +1,17 @@
 import json
 from models import Category, Product, User
-from saleapp import app
+from saleapp import app, db
 import hashlib
 
 def auth_user(username, password):
     password = hashlib.md5(password.encode("utf-8")).hexdigest()
     return User.query.filter(User.username.__eq__(username),User.password.__eq__(password)).first()
+
+def add_user(username, password, name, avatar):
+    password = hashlib.md5(password.encode("utf-8")).hexdigest()
+    u = User(name=name, password=password, username=username, avatar=avatar)
+    db.session.add(u)
+    db.session.commit()
 
 def get_user_by_id(user_id):
     return User.query.get(user_id)
